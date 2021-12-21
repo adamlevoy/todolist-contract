@@ -13,12 +13,18 @@ contract TodoList {
     Todo[] public todos;
     mapping(address => Todo[]) todosByOwner;
 
-    event CreatedTodo(
+    event AddedTodo(
         address indexed owner,
         uint256 indexed id,
-        string indexed todo
+        string indexed text
     );
     event ToggledTodo(
+        address indexed owner,
+        uint256 indexed id,
+        string indexed text
+    );
+
+    event RemovedTodo(
         address indexed owner,
         uint256 indexed id,
         string indexed text
@@ -36,11 +42,11 @@ contract TodoList {
         _;
     }
 
-    function createTodo(string calldata _text) external {
+    function addTodo(string calldata _text) external {
         Todo[] storage todoList = todosByOwner[msg.sender];
         uint256 todoId = todoList.length + 1;
         todoList.push(Todo({id: todoId, text: _text, completed: false}));
-        emit CreatedTodo(msg.sender, todoId, _text);
+        emit AddedTodo(msg.sender, todoId, _text);
         console.log(
             "You created Todo with ID: %d, and text: %s",
             todoId,
@@ -58,15 +64,18 @@ contract TodoList {
 
     function removeTodo(uint256 _id) external todoExists(_id) {
         Todo[] storage todoList = todosByOwner[msg.sender];
+        string memory todoText;
 
         for (uint256 i = 0; i < todoList.length; i++) {
             if (_id == todoList[i].id) {
                 todoList[i] = todoList[todoList.length - 1];
+                todoText = todoList[i].text;
                 console.log("Todo #%d has been removed!", _id);
             }
         }
 
         todoList.pop();
+        emit RemovedTodo(msg.sender, _id, todoText);
     }
 
     function getTodoListByOwner() external view returns (Todo[] memory) {
